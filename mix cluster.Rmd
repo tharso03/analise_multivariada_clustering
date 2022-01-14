@@ -1,0 +1,61 @@
+---
+title: "Clustering Mistura"
+author: "Tharso Monteiro"
+date: "11/25/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(mclust)
+library(ggplot2)
+```
+
+
+The data set contains six measurements made on 100 genuine and 100 counterfeit old-Swiss 1000-franc bank notes.
+
+```{r}
+head(banknote)
+```
+
+```{r}
+X <- data.matrix(banknote[,-1])
+```
+
+```{r}
+cfit <- Mclust(X)
+```
+
+
+```{r}
+BIC <- mclustBIC(X)
+plot(BIC)
+```
+
+```{r}
+summary(BIC)
+```
+
+Como queremos 2 clusers, usamos VVE (Variable Volume, Variable Shape, Equal Orientation) com 2 agrupamentos.
+
+```{r}
+fit1 <- Mclust(X, x = BIC, G = 2, modelNames = 'VVE')
+```
+
+```{r}
+table(banknote$Status,fit1$classification)
+```
+```{r}
+plot(fit1)
+```
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,167 @@
+---
+title: "Hierarchical Clustering"
+author: "Tharso Monteiro"
+date: "11/24/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(tidyverse)
+```
+
+# Hierarchical Clustering
+
+
+```{r}
+econdata <- read_xls('index2021_data.xls')
+```
+
+```{r}
+glimpse(econdata)
+```
+Cleaning Data
+
+```{r}
+econdata_colnames <- names(econdata)
+
+econdata <- data.frame(lapply(econdata, function(x){
+  gsub('N/A',NA,x)
+}))
+
+names(econdata) <- econdata_colnames
+
+to_numeric <- function(x){
+  as.numeric(as.character(x))
+}
+
+econdata <- econdata %>%
+  mutate_at(vars(-one_of('Country Name', 'WEBNAME', 'Region', 'Country')),
+  to_numeric)
+
+econdata$Country <- NULL
+econdata$WEBNAME <- NULL
+econdata$CountryID <- NULL
+```
+
+```{r}
+colSums(is.na(econdata))
+```
+```{r}
+econdata <- econdata %>%
+  drop_na()
+```
+
+
+```{r}
+econdata$Region <- as_factor(econdata$Region)
+
+econdata <- econdata%>%
+  mutate(
+    FDI_pop = `FDI Inflow (Millions)`/`Population (Millions)`
+  )
+
+econdata$`Region Rank` <- NULL
+econdata$`World Rank` <- NULL
+econdata$`Population (Millions)` <- NULL
+econdata$`FDI Inflow (Millions)` <- NULL
+```
+
+
+
+Hierarchical Clustering
+
+```{r}
+clean_data <- econdata %>%
+  select(-one_of("Country Name",'Region'))
+
+clean_data <- apply(clean_data,2,scale)
+
+rownames(clean_data) <- econdata$`Country Name`
+```
+
+
+```{r}
+hc_econ <- hclust(dist(clean_data),
+                  method = 'complete')
+```
+
+```{r}
+which(cutree(hc_econ,6)==6)
+```
+
+Venezuela is an outlier becuase of 19906.02% inflation. It always creates its own cluster. We will remove it.
+
+```{r}
+clean_data <- clean_data[-170,]
+```
+
+Doing HC again.
+
+```{r}
+hc_econ2 <- hclust(dist(clean_data),
+                   method = 'complete')
+```
+
+```{r}
+table(cutree(hc_econ2,5))
+```
+```{r}
+clean_data <- cbind(clean_data, cluster = c(cutree(hc_econ2,5)))
+clean_data <- as.data.frame(clean_data)
+```
+
+```{r}
+rownames(clean_data[which(clean_data$cluster==1),])
+```
+
+```{r}
+rownames(clean_data[which(clean_data$cluster==2),])
+```
+```{r}
+rownames(clean_data[which(clean_data$cluster==3),])
+```
+```{r}
+rownames(clean_data[which(clean_data$cluster==4),])
+```
+```{r}
+rownames(clean_data[which(clean_data$cluster==5),])
+```
+
+
+PCA
+
+CONSERTAR : CLUSTER ESTÁ INCLUSO NO PCA
+
+```{r}
+pca_econ <- prcomp(clean_data[,-clean_data$cluster])
+```
+
+```{r}
+pca_df <- data.frame(
+  countryname = as.character(rownames(clean_data)),
+  PC1 = pca_econ$x[,'PC1'],
+  PC2 = pca_econ$x[,'PC2'],
+  cluster = factor(clean_data$cluster)
+)
+```
+
+
+```{r}
+ggplot(pca_df)+
+  geom_point(aes(PC1,PC2,colour = cluster))+
+  geom_text(aes(PC1,PC2,label = countryname), hjust = 0, vjust = 0)
+```
+
+```{r}
+pca_econ$rotation
+```
+
+* Cluster 1 : Developing and underdeveloped countries
+* Cluster 2 : Developed countries which are not global superpowers
+* Cluster 3 : Countries in war or severe economical depression
+* Cluster 4 : Global superpowers
+* Cluster 5 : Louxemburg
+
+

@@ -1,0 +1,105 @@
+---
+title: "Credit Card Clustering"
+author: "Tharso Monteiro"
+date: "11/18/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(tidyverse)
+library(factoextra)
+```
+
+# Loading Data
+
+
+```{r}
+ccdata <- read_csv("CC GENERAL.csv")
+```
+
+# EDA
+
+Checking for missing values.
+
+```{r}
+dim(ccdata)
+```
+
+
+```{r}
+colSums(is.na(ccdata))
+```
+MINIMUM_PAYMENTS has 313 missing values. CREDIT_LIMIT has 1 missing value.
+
+We will replace these values with the variable median.
+
+```{r}
+ccdata$MINIMUM_PAYMENTS[is.na(ccdata$MINIMUM_PAYMENTS)] <- median(ccdata$MINIMUM_PAYMENTS, na.rm = T)
+ccdata$CREDIT_LIMIT[is.na(ccdata$CREDIT_LIMIT)] <- median(ccdata$CREDIT_LIMIT, na.rm = T)
+```
+
+((Shoud Outliers be removed now??))
+
+
+
+# K-means Clustering
+
+We analysed the optimal number of clusters according to within-cluster sum of squared minimization. We see that the scree pĺot stabilizes after the 3rd cluster.
+
+```{r}
+ccdata$CUST_ID <- NULL
+
+fviz_nbclust(ccdata, kmeans, method = 'wss')
+```
+
+```{r}
+cc_km <- kmeans(ccdata,
+                3)
+```
+
+Vizualising cluters using 2PCs.
+
+```{r}
+fviz_cluster(cc_km,
+             data = ccdata,
+              ellipse = FALSE
+             )
+```
+Interpreting PCs and Clusters.
+
+```{r}
+cc_pca <- prcomp(ccdata,
+                 center = T,
+                 scale = T)
+```
+
+```{r}
+cc_pca$rotation[,1:2]
+```
+PC1 : Purchase frequency.
+PC2 : Balance and Cash in advance frequency.
+
+We can interpret the clusters as:
+
+1 : Light Credit Card Users
+2 : Moderate Credit Card Users
+3 : Heavy Credit Card Users
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

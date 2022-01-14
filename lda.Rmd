@@ -1,0 +1,47 @@
+---
+title: "LDA"
+author: "Tharso Monteiro"
+date: "11/29/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(mclust)
+library(tidyverse)
+library(MASS)
+```
+
+```{r}
+head(banknote)
+```
+
+```{r}
+set.seed(1251)
+train_index <- sample(1:nrow(banknote), size = 0.7*nrow(banknote))
+
+train <- banknote[train_index,]
+test <- banknote[-train_index,]
+```
+
+
+
+```{r}
+lda.fit <- lda(Status ~ .,
+               data = train)
+```
+
+```{r}
+lda.pred <- predict(lda.fit, test)
+```
+
+```{r}
+table(lda.pred$class,test$Status)
+```
+
+
+
+
+
+
+
